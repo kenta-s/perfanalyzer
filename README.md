@@ -1,6 +1,6 @@
 ## [WIP] Perfanalyzer
 
-Perfanalyzer analyzes Rails' log and finds which pages are slow.
+Perfanalyzer analyzes Rails' log and find slow pages.
 
 ## Usage
 
