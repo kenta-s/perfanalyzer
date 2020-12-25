@@ -1,11 +1,11 @@
 use std::fs::File;
-use std::io::{self, BufRead, BufReader};
+use std::io::{BufRead, BufReader};
 use regex::Regex;
 use std::collections::HashMap;
 
+// #[derive(Copy, Clone)]
 struct PerfInfo {
-    method: String,
-    path: String,
+    page: String,
     controller: String,
     action: String,
     duration: f32,
@@ -20,18 +20,25 @@ struct SlowPage {
     count: u32
 }
 
-fn row_to_perf_info(row: &str) -> std::io::Result<PerfInfo> {
+fn extract_string_from_row(row: &str, regex: Regex) -> String {
+    let texts = regex.captures(row).unwrap();
+
+    return String::from(&texts[0]);
+}
+
+fn page_from_row(row: &str) -> String {
     let path_regex = Regex::new(r"path=(\S+)").unwrap();
-    let path_cap = path_regex.captures(row).unwrap();
-
     let method_regex = Regex::new(r"method=(\S+)").unwrap();
-    let method_cap = method_regex.captures(row).unwrap();
 
-    let controller_regex = Regex::new(r"controller=(\S+)").unwrap();
-    let controller_cap = controller_regex.captures(row).unwrap();
+    let path = extract_string_from_row(row, path_regex);
+    let method = extract_string_from_row(row, method_regex);
 
-    let action_regex = Regex::new(r"action=(\S+)").unwrap();
-    let action_cap = action_regex.captures(row).unwrap();
+    return format!("{} {}", method, path);
+}
+
+fn row_to_perf_info(row: &str) -> std::io::Result<PerfInfo> {
+    let controller = extract_string_from_row(row, Regex::new(r"controller=(\S+)").unwrap());
+    let action = extract_string_from_row(row, Regex::new(r"action=(\S+)").unwrap());
 
     let duration_regex = Regex::new(r"duration=(\S+)").unwrap();
     let duration_cap = duration_regex.captures(row).unwrap();
@@ -49,11 +56,13 @@ fn row_to_perf_info(row: &str) -> std::io::Result<PerfInfo> {
     let db_cap_split: Vec<&str> = db_cap[0].split("=").collect();
     let db = db_cap_split[1].parse::<f32>().unwrap();
 
+    // let page = format!("{} {}", &method_cap[0], &path_cap[0]);
+    let page = page_from_row(&row);
+
     let perf_info = PerfInfo {
-        method: String::from(&method_cap[0]),
-        path: String::from(&path_cap[0]),
-        controller: String::from(&controller_cap[0]),
-        action: String::from(&action_cap[0]),
+        page: page,
+        controller: controller,
+        action: action,
         duration: duration,
         view: view,
         db: db,
@@ -63,8 +72,28 @@ fn row_to_perf_info(row: &str) -> std::io::Result<PerfInfo> {
     return Ok(perf_info);
 }
 
+// fn merge_perf_info(perf_info1: PerfInfo, perf_info2: PerfInfo) -> PerfInfo {
+//   // TODO:
+//   // calculate average of
+//   //   - duration
+//   //   - view
+//   //   - db
+//   //
+//   // and count should be perf_info1.count + perf_info2.count
+//   
+//     return PerfInfo {
+//         page: perf_info1.page,
+//         controller: perf_info1.controller,
+//         action: perf_info1.action,
+//         duration: (perf_info1.duration + perf_info2.duration) / 2,
+//         view: (perf_info1.view + perf_info2.view) / 2,
+//         db: (perf_info1.db + perf_info2.db) / 2,
+//         count: 1
+//     };
+// }
+
 fn main() -> std::io::Result<()> {
-    let mut perf_map: HashMap<&str, PerfInfo> = HashMap::new();
+    let mut perf_map: HashMap<String, PerfInfo> = HashMap::new();
     // let mut existing_keys = Vec::new();
 
     // TODO: get filename from ARGV
@@ -72,42 +101,45 @@ fn main() -> std::io::Result<()> {
         let row = result?;
 
         let path_regex = Regex::new(r"path=(\S+)").unwrap();
+        if !path_regex.is_match(&row) { continue };
 
-        if path_regex.is_match(&row) {
-          let perf_result = row_to_perf_info(&row);
-          // println!("{}", &row);
+        let page = page_from_row(&row);
+        println!("{}", page);
 
-          match perf_result {
-            Err(why) => println!("{}", why),
-            Ok(perf) => println!("{}", perf.method),
-          }
+        let perf_result = row_to_perf_info(&row);
 
-          // let perf_info = match perf_result {
-          //   Err(why) => None,
-          //   Some(&perf) => Ok(perf,
-          // };
-          // println!("{} {}", perf_info.method, perf_info.path);
-
-          // let key = format!("{} {}", perf_info.method, perf_info.path);
-          // let value = perf_map.get(key.as_str());
-          // println!("{}", value.path)
-          // // existing_keys.push(key.as_str());
-          // match value {
-          //    None => perf_map.insert(key.as_str(), perf_info),
-          //    _ => perf_map.insert(key.as_str(), perf_info) // TODO: insert perf_info with longer duration
-          // };
-
+        let perf_info = match perf_result {
+          Err(_) => continue,
+          Ok(perf) => perf,
         };
+
+        let page = perf_info.page.clone();
+        let cloned_page = page.clone();
+
+        // match perf_map.get(&page) {
+        //   None => perf_map.insert(page, perf_info),
+        //   _ => perf_map.insert(page, perf_info)
+        // };
+
+        // TODO: make this work
+        // let merged_perf_info = match perf_map.get(&page) {
+        //   None => perf_info,
+        //   Some(perf) => merge_perf_info(&perf_info, perf)
+        // };
+
+        // perf_map.insert(page, merged_perf_info);
+
+        // match perf_map.get(&cloned_page) {
+        //   None => println!("none"),
+        //   Some(value) => println!("{}", value.controller),
+        // }
     }
 
-    // println!("{}", bar.method);
-    // println!("{}", bar.path);
-    // println!("{}", bar.duration);
-    // println!("{}", bar.view);
-    // println!("{}", bar.db);
+    match perf_map.get("foo") {
+      None => println!("nothing found"),
+      Some(perf) => println!("found: {}", perf.controller)
+    };
+    
 
-    // for x in &existing_keys {
-    //     println!("{}", x);
-    // }
     Ok(())
 }
