@@ -3,7 +3,6 @@ use std::io::{BufRead, BufReader};
 use regex::Regex;
 use std::collections::HashMap;
 
-// #[derive(Copy, Clone)]
 struct PerfInfo {
     page: String,
     controller: String,
@@ -72,29 +71,22 @@ fn row_to_perf_info(row: &str) -> std::io::Result<PerfInfo> {
     return Ok(perf_info);
 }
 
-// fn merge_perf_info(perf_info1: PerfInfo, perf_info2: PerfInfo) -> PerfInfo {
-//   // TODO:
-//   // calculate average of
-//   //   - duration
-//   //   - view
-//   //   - db
-//   //
-//   // and count should be perf_info1.count + perf_info2.count
-//   
-//     return PerfInfo {
-//         page: perf_info1.page,
-//         controller: perf_info1.controller,
-//         action: perf_info1.action,
-//         duration: (perf_info1.duration + perf_info2.duration) / 2,
-//         view: (perf_info1.view + perf_info2.view) / 2,
-//         db: (perf_info1.db + perf_info2.db) / 2,
-//         count: 1
-//     };
-// }
+fn merge_perf_info(perf_info1: PerfInfo, perf_info2: &PerfInfo) -> PerfInfo {
+    return PerfInfo {
+        page: perf_info1.page,
+        controller: perf_info1.controller,
+        action: perf_info1.action,
+        duration: (perf_info1.duration + perf_info2.duration) / 2.0,
+        view: (perf_info1.view + perf_info2.view) / 2.0,
+        db: (perf_info1.db + perf_info2.db) / 2.0,
+        count: perf_info1.count + perf_info2.count
+    };
+}
 
 fn main() -> std::io::Result<()> {
     let mut perf_map: HashMap<String, PerfInfo> = HashMap::new();
-    // let mut existing_keys = Vec::new();
+    let mut found_pages = Vec::new();
+    let mut slow_pages = Vec::new();
 
     // TODO: get filename from ARGV
     for result in BufReader::new(File::open("./development.log")?).lines() {
@@ -116,30 +108,34 @@ fn main() -> std::io::Result<()> {
         let page = perf_info.page.clone();
         let cloned_page = page.clone();
 
-        // match perf_map.get(&page) {
-        //   None => perf_map.insert(page, perf_info),
-        //   _ => perf_map.insert(page, perf_info)
-        // };
+        found_pages.push(cloned_page);
 
-        // TODO: make this work
-        // let merged_perf_info = match perf_map.get(&page) {
-        //   None => perf_info,
-        //   Some(perf) => merge_perf_info(&perf_info, perf)
-        // };
+        let merged_perf_info = match perf_map.get(&page) {
+          None => perf_info,
+          Some(perf) => merge_perf_info(perf_info, perf)
+        };
 
-        // perf_map.insert(page, merged_perf_info);
-
-        // match perf_map.get(&cloned_page) {
-        //   None => println!("none"),
-        //   Some(value) => println!("{}", value.controller),
-        // }
+        perf_map.insert(page, merged_perf_info);
     }
 
-    match perf_map.get("foo") {
-      None => println!("nothing found"),
-      Some(perf) => println!("found: {}", perf.controller)
+    for page in found_pages {
+      match perf_map.get(&page) {
+        None => continue,
+        Some(perf) => {
+          let slow_page = SlowPage {
+              path: page,
+              average_duration: perf.duration,
+              count: perf.count
+          };
+
+          slow_pages.push(slow_page);
+        }
+      };
     };
-    
+
+    // TODO: sort slow_pages by slow_page.average_duration
+    // slow_pages.sort();
+    println!("slowest page: {}", &slow_pages[0].path);
 
     Ok(())
 }
