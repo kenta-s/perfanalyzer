@@ -4,6 +4,7 @@ use regex::Regex;
 use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
+use std::env;
 
 #[derive(Serialize, Deserialize)]
 struct PerfInfo {
@@ -70,7 +71,7 @@ fn row_to_perf_info(row: &str) -> Result<PerfInfo, &'static str> {
 
     let duration_cap_split: Vec<&str> = duration_cap[0].split("=").collect();
     let duration = match duration_cap_split[1].parse::<f32>() {
-        Err(e) => return Err("failed"),
+        Err(_) => return Err("failed"),
         Ok(r) => r
     };
 
@@ -82,7 +83,7 @@ fn row_to_perf_info(row: &str) -> Result<PerfInfo, &'static str> {
 
     let view_cap_split: Vec<&str> = view_cap[0].split("=").collect();
     let view = match view_cap_split[1].parse::<f32>() {
-        Err(e) => return Err("failed"),
+        Err(_) => return Err("failed"),
         Ok(r) => r
     };
 
@@ -94,7 +95,7 @@ fn row_to_perf_info(row: &str) -> Result<PerfInfo, &'static str> {
 
     let db_cap_split: Vec<&str> = db_cap[0].split("=").collect();
     let db = match db_cap_split[1].parse::<f32>() {
-        Err(e) => return Err("failed"),
+        Err(_) => return Err("failed"),
         Ok(r) => r
     };
 
@@ -125,11 +126,11 @@ fn merge_perf_info(perf_info1: PerfInfo, perf_info2: &PerfInfo) -> PerfInfo {
     };
 }
 
-fn extract_usable_lines() -> std::io::Result<()> {
+fn extract_usable_lines(filename: String) -> std::io::Result<()> {
     let f = File::create("./ready.log")?;
     let mut stream = BufWriter::new(f);
 
-    for result in BufReader::new(File::open("./development.log")?).lines() {
+    for result in BufReader::new(File::open(filename)?).lines() {
         let row = result?;
 
         let path_regex = Regex::new(r"path=(\S+)").unwrap();
@@ -143,13 +144,17 @@ fn extract_usable_lines() -> std::io::Result<()> {
 }
 
 fn main() -> std::io::Result<()> {
-    extract_usable_lines();
+    let args: Vec<String> = env::args().skip(1).collect();
+    if args.len() == 2 {
+       let filename = String::from(&args[1]);
+       println!("Extracting usable lines. This may take a while...");
+       extract_usable_lines(filename).unwrap();
+    }
 
     let mut perf_map: HashMap<String, PerfInfo> = HashMap::new();
     let mut found_pages = Vec::new();
     let mut slow_pages = Vec::new();
 
-    // TODO: get filename from ARGV
     for result in BufReader::new(File::open("./ready.log")?).lines() {
         let row = result?;
 
