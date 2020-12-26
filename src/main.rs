@@ -1,5 +1,5 @@
 use std::fs::File;
-use std::io::{BufRead, BufReader};
+use std::io::{Write, BufRead, BufReader, BufWriter};
 use regex::Regex;
 use std::collections::HashMap;
 
@@ -14,7 +14,7 @@ struct PerfInfo {
 }
 
 struct SlowPage {
-    path: String,
+    page: String,
     average_duration: f32,
     count: u32
 }
@@ -83,13 +83,32 @@ fn merge_perf_info(perf_info1: PerfInfo, perf_info2: &PerfInfo) -> PerfInfo {
     };
 }
 
+fn extract_usable_lines() -> std::io::Result<()> {
+    let f = File::create("./ready.log")?;
+    let mut stream = BufWriter::new(f);
+
+    for result in BufReader::new(File::open("./development.log")?).lines() {
+        let row = result?;
+
+        let path_regex = Regex::new(r"path=(\S+)").unwrap();
+        if !path_regex.is_match(&row) { continue };
+
+        stream.write(&row.as_bytes());
+        stream.write(b"\n")?;
+    }
+
+    Ok(())
+}
+
 fn main() -> std::io::Result<()> {
+    // extract_usable_lines();
+
     let mut perf_map: HashMap<String, PerfInfo> = HashMap::new();
     let mut found_pages = Vec::new();
     let mut slow_pages = Vec::new();
 
     // TODO: get filename from ARGV
-    for result in BufReader::new(File::open("./development.log")?).lines() {
+    for result in BufReader::new(File::open("./ready.log")?).lines() {
         let row = result?;
 
         let path_regex = Regex::new(r"path=(\S+)").unwrap();
@@ -123,7 +142,7 @@ fn main() -> std::io::Result<()> {
         None => continue,
         Some(perf) => {
           let slow_page = SlowPage {
-              path: page,
+              page: page,
               average_duration: perf.duration,
               count: perf.count
           };
@@ -133,9 +152,18 @@ fn main() -> std::io::Result<()> {
       };
     };
 
-    // TODO: sort slow_pages by slow_page.average_duration
-    // slow_pages.sort();
-    println!("slowest page: {}", &slow_pages[0].path);
+    // let f = File::create("./out.log")?;
+
+    // let mut stream = BufWriter::new(f);
+    // for page in slow_pages {
+    //     stream.write(page.path.as_bytes());
+    //     stream.write(b"\n")?;
+    // };
+
+    for page in slow_pages {
+        println!("slowest page: {}", &page.page);
+    };
+    // println!("slowest page: {}", &slow_pages[0].path);
 
     Ok(())
 }
