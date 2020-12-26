@@ -1,10 +1,12 @@
 use std::fs::File;
-use std::io::{Write, BufRead, BufReader, BufWriter};
+use std::io::{BufRead, BufReader};
 use regex::Regex;
 use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
 use std::env;
+mod valid_line_extractor;
+use valid_line_extractor::extract_usable_lines;
 
 #[derive(Serialize, Deserialize)]
 struct PerfInfo {
@@ -126,28 +128,10 @@ fn merge_perf_info(perf_info1: PerfInfo, perf_info2: &PerfInfo) -> PerfInfo {
     };
 }
 
-fn extract_usable_lines(filename: String) -> std::io::Result<()> {
-    let f = File::create("./ready.log")?;
-    let mut stream = BufWriter::new(f);
-
-    for result in BufReader::new(File::open(filename)?).lines() {
-        let row = result?;
-
-        let path_regex = Regex::new(r"path=(\S+)").unwrap();
-        if !path_regex.is_match(&row) { continue };
-
-        stream.write(&row.as_bytes())?;
-        stream.write(b"\n")?;
-    }
-
-    Ok(())
-}
-
 fn main() -> std::io::Result<()> {
     let args: Vec<String> = env::args().skip(1).collect();
-    if args.len() == 2 {
-       let filename = String::from(&args[1]);
-       println!("Extracting usable lines. This may take a while...");
+    if args.len() == 1 {
+       let filename = String::from(&args[0]);
        extract_usable_lines(filename).unwrap();
     }
 
