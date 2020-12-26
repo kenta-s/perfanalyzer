@@ -2,7 +2,11 @@ use std::fs::File;
 use std::io::{Write, BufRead, BufReader, BufWriter};
 use regex::Regex;
 use std::collections::HashMap;
+use serde_json::{Result, Value};
+use serde_json::json;
+use serde::{Deserialize, Serialize};
 
+#[derive(Serialize, Deserialize)]
 struct PerfInfo {
     page: String,
     controller: String,
@@ -13,10 +17,17 @@ struct PerfInfo {
     count: u32
 }
 
+#[derive(Serialize, Deserialize)]
 struct SlowPage {
     page: String,
     average_duration: f32,
     count: u32
+}
+
+#[derive(Serialize, Deserialize)]
+struct PageInformation {
+    information: HashMap<String, PerfInfo>,
+    slow_pages: Vec<SlowPage>
 }
 
 fn extract_string_from_row(row: &str, regex: Regex) -> String {
@@ -55,7 +66,6 @@ fn row_to_perf_info(row: &str) -> std::io::Result<PerfInfo> {
     let db_cap_split: Vec<&str> = db_cap[0].split("=").collect();
     let db = db_cap_split[1].parse::<f32>().unwrap();
 
-    // let page = format!("{} {}", &method_cap[0], &path_cap[0]);
     let page = page_from_row(&row);
 
     let perf_info = PerfInfo {
@@ -115,7 +125,6 @@ fn main() -> std::io::Result<()> {
         if !path_regex.is_match(&row) { continue };
 
         let page = page_from_row(&row);
-        println!("{}", page);
 
         let perf_result = row_to_perf_info(&row);
 
@@ -152,18 +161,13 @@ fn main() -> std::io::Result<()> {
       };
     };
 
-    // let f = File::create("./out.log")?;
-
-    // let mut stream = BufWriter::new(f);
-    // for page in slow_pages {
-    //     stream.write(page.path.as_bytes());
-    //     stream.write(b"\n")?;
-    // };
-
-    for page in slow_pages {
-        println!("slowest page: {}", &page.page);
+    let page_information = PageInformation {
+        information: perf_map,
+        slow_pages: slow_pages,
     };
-    // println!("slowest page: {}", &slow_pages[0].path);
+
+    let serialized = serde_json::to_string(&page_information).unwrap();
+    println!("{}", serialized);
 
     Ok(())
 }
