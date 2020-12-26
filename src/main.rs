@@ -60,46 +60,25 @@ fn page_from_row(row: &str) -> String {
     return format!("{} {}", method, path);
 }
 
+fn extract_duration_from_row(row: &str, regex: Regex) -> Result<f32, &'static str> {
+    let captured = match regex.captures(row) {
+        None => return Err("failed"),
+        Some(value) => value
+    };
+
+    let split: Vec<&str> = captured[0].split("=").collect();
+    return match split[1].parse::<f32>() {
+        Err(_) => Err("failed"),
+        Ok(value) => Ok(value)
+    };
+}
+
 fn row_to_perf_info(row: &str) -> Result<PerfInfo, &'static str> {
     let controller = extract_string_from_row(row, Regex::new(r"controller=(\S+)").unwrap());
     let action = extract_string_from_row(row, Regex::new(r"action=(\S+)").unwrap());
-
-    let duration_regex = Regex::new(r"duration=(\S+)").unwrap();
-
-    let duration_cap = match duration_regex.captures(row) {
-        None => return Err("failed"),
-        Some(r) => r
-    };
-
-    let duration_cap_split: Vec<&str> = duration_cap[0].split("=").collect();
-    let duration = match duration_cap_split[1].parse::<f32>() {
-        Err(_) => return Err("failed"),
-        Ok(r) => r
-    };
-
-    let view_regex = Regex::new(r"view=(\S+)").unwrap();
-    let view_cap = match view_regex.captures(row) {
-        None => return Err("failed"),
-        Some(r) => r
-    };
-
-    let view_cap_split: Vec<&str> = view_cap[0].split("=").collect();
-    let view = match view_cap_split[1].parse::<f32>() {
-        Err(_) => return Err("failed"),
-        Ok(r) => r
-    };
-
-    let db_regex = Regex::new(r"db=(\S+)").unwrap();
-    let db_cap = match db_regex.captures(row) {
-        None => return Err("failed"),
-        Some(r) => r
-    };
-
-    let db_cap_split: Vec<&str> = db_cap[0].split("=").collect();
-    let db = match db_cap_split[1].parse::<f32>() {
-        Err(_) => return Err("failed"),
-        Ok(r) => r
-    };
+    let duration = extract_duration_from_row(row, Regex::new(r"duration=(\S+)").unwrap()).unwrap_or(0.0);
+    let view = extract_duration_from_row(row, Regex::new(r"view=(\S+)").unwrap()).unwrap_or(0.0);
+    let db = extract_duration_from_row(row, Regex::new(r"db=(\S+)").unwrap()).unwrap_or(0.0);
 
     let page = page_from_row(&row);
 
