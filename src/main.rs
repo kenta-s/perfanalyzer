@@ -60,7 +60,7 @@ fn page_from_row(row: &str) -> String {
     return format!("{} {}", method, path);
 }
 
-fn extract_duration_from_row(row: &str, regex: Regex) -> Result<f32, &'static str> {
+fn extract_duration_from_row(row: &str, regex: Regex) -> Result<f32, &str> {
     let captured = match regex.captures(row) {
         None => return Err("failed"),
         Some(value) => value
@@ -73,7 +73,7 @@ fn extract_duration_from_row(row: &str, regex: Regex) -> Result<f32, &'static st
     };
 }
 
-fn row_to_perf_info(row: &str) -> Result<PerfInfo, &'static str> {
+fn row_to_perf_info(row: &str) -> Result<PerfInfo, &str> {
     let controller = extract_string_from_row(row, Regex::new(r"controller=(\S+)").unwrap());
     let action = extract_string_from_row(row, Regex::new(r"action=(\S+)").unwrap());
     let duration = extract_duration_from_row(row, Regex::new(r"duration=(\S+)").unwrap()).unwrap_or(0.0);
