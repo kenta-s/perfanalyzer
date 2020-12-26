@@ -57,25 +57,46 @@ fn page_from_row(row: &str) -> String {
     return format!("{} {}", method, path);
 }
 
-fn row_to_perf_info(row: &str) -> std::io::Result<PerfInfo> {
+fn row_to_perf_info(row: &str) -> Result<PerfInfo, &'static str> {
     let controller = extract_string_from_row(row, Regex::new(r"controller=(\S+)").unwrap());
     let action = extract_string_from_row(row, Regex::new(r"action=(\S+)").unwrap());
 
     let duration_regex = Regex::new(r"duration=(\S+)").unwrap();
-    let duration_cap = duration_regex.captures(row).unwrap();
+
+    let duration_cap = match duration_regex.captures(row) {
+        None => return Err("failed"),
+        Some(r) => r
+    };
 
     let duration_cap_split: Vec<&str> = duration_cap[0].split("=").collect();
-    let duration = duration_cap_split[1].parse::<f32>().unwrap();
+    let duration = match duration_cap_split[1].parse::<f32>() {
+        Err(e) => return Err("failed"),
+        Ok(r) => r
+    };
 
     let view_regex = Regex::new(r"view=(\S+)").unwrap();
-    let view_cap = view_regex.captures(row).unwrap();
+    let view_cap = match view_regex.captures(row) {
+        None => return Err("failed"),
+        Some(r) => r
+    };
+
     let view_cap_split: Vec<&str> = view_cap[0].split("=").collect();
-    let view = view_cap_split[1].parse::<f32>().unwrap();
+    let view = match view_cap_split[1].parse::<f32>() {
+        Err(e) => return Err("failed"),
+        Ok(r) => r
+    };
 
     let db_regex = Regex::new(r"db=(\S+)").unwrap();
-    let db_cap = db_regex.captures(row).unwrap();
+    let db_cap = match db_regex.captures(row) {
+        None => return Err("failed"),
+        Some(r) => r
+    };
+
     let db_cap_split: Vec<&str> = db_cap[0].split("=").collect();
-    let db = db_cap_split[1].parse::<f32>().unwrap();
+    let db = match db_cap_split[1].parse::<f32>() {
+        Err(e) => return Err("failed"),
+        Ok(r) => r
+    };
 
     let page = page_from_row(&row);
 
@@ -122,7 +143,7 @@ fn extract_usable_lines() -> std::io::Result<()> {
 }
 
 fn main() -> std::io::Result<()> {
-    // extract_usable_lines();
+    extract_usable_lines();
 
     let mut perf_map: HashMap<String, PerfInfo> = HashMap::new();
     let mut found_pages = Vec::new();
