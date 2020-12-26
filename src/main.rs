@@ -2,9 +2,8 @@ use std::fs::File;
 use std::io::{Write, BufRead, BufReader, BufWriter};
 use regex::Regex;
 use std::collections::HashMap;
-use serde_json::{Result, Value};
-use serde_json::json;
 use serde::{Deserialize, Serialize};
+use std::cmp::Ordering;
 
 #[derive(Serialize, Deserialize)]
 struct PerfInfo {
@@ -22,6 +21,18 @@ struct SlowPage {
     page: String,
     average_duration: f32,
     count: u32
+}
+
+impl PartialEq for SlowPage {
+    fn eq(&self, other: &Self) -> bool {
+        self.average_duration == other.average_duration
+    }
+}
+
+impl PartialOrd for SlowPage {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        other.average_duration.partial_cmp(&self.average_duration)
+    }
 }
 
 #[derive(Serialize, Deserialize)]
@@ -103,7 +114,7 @@ fn extract_usable_lines() -> std::io::Result<()> {
         let path_regex = Regex::new(r"path=(\S+)").unwrap();
         if !path_regex.is_match(&row) { continue };
 
-        stream.write(&row.as_bytes());
+        stream.write(&row.as_bytes())?;
         stream.write(b"\n")?;
     }
 
@@ -123,8 +134,6 @@ fn main() -> std::io::Result<()> {
 
         let path_regex = Regex::new(r"path=(\S+)").unwrap();
         if !path_regex.is_match(&row) { continue };
-
-        let page = page_from_row(&row);
 
         let perf_result = row_to_perf_info(&row);
 
@@ -160,6 +169,8 @@ fn main() -> std::io::Result<()> {
         }
       };
     };
+
+    slow_pages.sort_by(|a, b| a.partial_cmp(b).unwrap());
 
     let page_information = PageInformation {
         information: perf_map,
