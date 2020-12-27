@@ -8,7 +8,11 @@ use std::env;
 mod valid_line_extractor;
 use valid_line_extractor::extract_usable_lines;
 mod text_extractor;
-use text_extractor::{extract_string_from_row, extract_duration_from_row};
+use text_extractor::{
+    extract_string_from_row,
+    extract_duration_from_row,
+    extract_page_from_row
+};
 
 #[derive(Serialize, Deserialize)]
 #[derive(Clone)]
@@ -47,16 +51,6 @@ struct PageInformation {
     slow_pages: Vec<SlowPage>
 }
 
-fn page_from_row(row: &str) -> String {
-    let path_regex = Regex::new(r"path=(\S+)").unwrap();
-    let method_regex = Regex::new(r"method=(\S+)").unwrap();
-
-    let path = extract_string_from_row(row, path_regex).unwrap_or(String::new());
-    let method = extract_string_from_row(row, method_regex).unwrap_or(String::new());
-
-    return format!("{} {}", method, path);
-}
-
 fn row_to_perf_info(row: &str) -> Result<PerfInfo, &str> {
     let controller = extract_string_from_row(row, Regex::new(r"controller=(\S+)").unwrap()).unwrap_or(String::new());
     let action = extract_string_from_row(row, Regex::new(r"action=(\S+)").unwrap()).unwrap_or(String::new());
@@ -64,7 +58,7 @@ fn row_to_perf_info(row: &str) -> Result<PerfInfo, &str> {
     let view = extract_duration_from_row(row, Regex::new(r"view=(\S+)").unwrap()).unwrap_or(0.0);
     let db = extract_duration_from_row(row, Regex::new(r"db=(\S+)").unwrap()).unwrap_or(0.0);
 
-    let page = page_from_row(&row);
+    let page = extract_page_from_row(&row);
 
     let perf_info = PerfInfo {
         page: page,

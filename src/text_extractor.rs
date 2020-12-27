@@ -27,6 +27,16 @@ pub fn extract_duration_from_row(row: &str, regex: Regex) -> Result<f32, &str> {
     };
 }
 
+pub fn extract_page_from_row(row: &str) -> String {
+    let path_regex = Regex::new(r"path=(\S+)").unwrap();
+    let method_regex = Regex::new(r"method=(\S+)").unwrap();
+
+    let path = extract_string_from_row(row, path_regex).unwrap_or(String::new());
+    let method = extract_string_from_row(row, method_regex).unwrap_or(String::new());
+
+    return format!("{} {}", method, path);
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -68,5 +78,19 @@ mod tests {
         let row = "method=GET path=/foo format=html controller=FooController action=index status=200 duration=1915.45 view=1841.20 db=7.93";
         let value = extract_duration_from_row(row, Regex::new(r"view=(\S+)").unwrap());
         assert_eq!(Ok(1841.20), value);
+    }
+
+    #[test]
+    fn extract_page_from_row_should_return_method_and_path() {
+        let row = "[xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx] method=GET path=/foo format=html controller=FooController action=index status=200";
+        let value = extract_page_from_row(row);
+        assert_eq!("GET /foo", value);
+    }
+
+    #[test]
+    fn extract_page_from_row_should_return_empty_string_when_a_row_does_not_have_enough_information() {
+        let row = "aaaaa bbbbb ccccc";
+        let value = extract_page_from_row(row);
+        assert_eq!(" ", value);
     }
 }
