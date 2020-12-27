@@ -9,6 +9,7 @@ mod valid_line_extractor;
 use valid_line_extractor::extract_usable_lines;
 
 #[derive(Serialize, Deserialize)]
+#[derive(Clone)]
 struct PerfInfo {
     page: String,
     controller: String,
@@ -127,21 +128,18 @@ fn main() -> std::io::Result<()> {
         let perf_result = row_to_perf_info(&row);
 
         let perf_info = match perf_result {
-          Err(_) => continue,
-          Ok(perf) => perf,
+            Err(_) => continue,
+            Ok(perf) => perf,
         };
 
-        let page = perf_info.page.clone();
-        let cloned_page = page.clone();
+        found_pages.push(perf_info.page.clone());
 
-        found_pages.push(cloned_page);
-
-        let merged_perf_info = match perf_map.get(&page) {
-          None => perf_info,
-          Some(perf) => merge_perf_info(perf_info, perf)
+        let merged_perf_info = match perf_map.get(&perf_info.page) {
+            None => perf_info.clone(),
+            Some(perf) => merge_perf_info(perf_info.clone(), perf)
         };
 
-        perf_map.insert(page, merged_perf_info);
+        perf_map.insert(perf_info.page, merged_perf_info);
     }
 
     for page in found_pages {
