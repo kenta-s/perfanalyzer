@@ -119,6 +119,8 @@ fn main() -> std::io::Result<()> {
         perf_map.insert(perf_info.page, merged_perf_info);
     }
 
+    found_pages.dedup();
+
     for page in found_pages {
       match perf_map.get(&page) {
         None => continue,
