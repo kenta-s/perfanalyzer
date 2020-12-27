@@ -52,13 +52,13 @@ struct PageInformation {
 }
 
 fn row_to_perf_info(row: &str) -> Result<PerfInfo, &str> {
-    let controller = extract_string_from_row(row, Regex::new(r"controller=(\S+)").unwrap()).unwrap_or(String::new());
-    let action = extract_string_from_row(row, Regex::new(r"action=(\S+)").unwrap()).unwrap_or(String::new());
-    let duration = extract_duration_from_row(row, Regex::new(r"duration=(\S+)").unwrap()).unwrap_or(0.0);
-    let view = extract_duration_from_row(row, Regex::new(r"view=(\S+)").unwrap()).unwrap_or(0.0);
-    let db = extract_duration_from_row(row, Regex::new(r"db=(\S+)").unwrap()).unwrap_or(0.0);
+    let controller = extract_string_from_row(row, Regex::new(r"controller=(\S+)").unwrap())?;
+    let action = extract_string_from_row(row, Regex::new(r"action=(\S+)").unwrap())?;
+    let duration = extract_duration_from_row(row, Regex::new(r"duration=(\S+)").unwrap())?;
+    let view = extract_duration_from_row(row, Regex::new(r"view=(\S+)").unwrap())?;
+    let db = extract_duration_from_row(row, Regex::new(r"db=(\S+)").unwrap())?;
 
-    let page = extract_page_from_row(&row);
+    let page = extract_page_from_row(&row)?;
 
     let perf_info = PerfInfo {
         page: page,
