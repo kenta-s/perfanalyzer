@@ -14,8 +14,7 @@ use text_extractor::{
     extract_page_from_row
 };
 
-#[derive(Serialize, Deserialize)]
-#[derive(Clone)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 struct PerfInfo {
     page: String,
     controller: String,
@@ -102,10 +101,6 @@ fn main() -> std::io::Result<()> {
 
     for result in BufReader::new(File::open(filename)?).lines() {
         let row = result?;
-
-        let path_regex = Regex::new(r"path=(\S+)").unwrap();
-        if !path_regex.is_match(&row) { continue };
-
         let perf_result = row_to_perf_info(&row);
 
         let perf_info = match perf_result {
@@ -151,4 +146,32 @@ fn main() -> std::io::Result<()> {
     println!("{}", serialized);
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn row_to_perf_info_returns_perf_info_when_valid_row_is_given() {
+        let row = "method=GET path=/foo format=html controller=FooController action=index status=200 duration=1915.45 view=1841.20 db=7.93";
+        let value = row_to_perf_info(&row).unwrap();
+
+        assert_eq!(String::from("GET /foo"), value.page);
+        assert_eq!(String::from("FooController"), value.controller);
+        assert_eq!(String::from("index"), value.action);
+        assert_eq!(1915.45, value.duration);
+        assert_eq!(1841.20, value.view);
+        assert_eq!(7.93, value.db);
+        assert_eq!(1, value.count);
+    }
+
+    #[test]
+    fn row_to_perf_info_returns_err_when_invalid_row_is_given() {
+        // "action" is missing in this row
+        let row = "method=GET path=/foo format=html controller=FooController status=200 duration=1915.45 view=1841.20 db=7.93";
+        let value = row_to_perf_info(&row);
+
+        assert_eq!(Err("failed"), value);
+    }
 }
