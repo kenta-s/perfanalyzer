@@ -174,4 +174,36 @@ mod tests {
 
         assert_eq!(Err("failed"), value);
     }
+
+    #[test]
+    fn merge_perf_info_returns_merged_perf_info() {
+        let perf_info1 = PerfInfo {
+            page: String::from("GET /foo"),
+            controller: String::from("FooController"),
+            action: String::from("index"),
+            duration: 1000.0,
+            view: 100.0,
+            db: 10.0,
+            count: 40
+        };
+
+        let perf_info2 = PerfInfo {
+            page: String::from("GET /foo"),
+            controller: String::from("FooController"),
+            action: String::from("index"),
+            duration: 2000.0,
+            view: 200.0,
+            db: 20.0,
+            count: 2
+        };
+
+        let value = merge_perf_info(perf_info1, &perf_info2);
+        assert_eq!(String::from("GET /foo"), value.page);
+        assert_eq!(String::from("FooController"), value.controller);
+        assert_eq!(String::from("index"), value.action);
+        assert_eq!(1500.0, value.duration);
+        assert_eq!(150.0, value.view);
+        assert_eq!(15.0, value.db);
+        assert_eq!(42, value.count);
+    }
 }
