@@ -87,16 +87,20 @@ fn merge_perf_info(perf_info1: PerfInfo, perf_info2: &PerfInfo) -> PerfInfo {
 
 fn main() -> std::io::Result<()> {
     let args: Vec<String> = env::args().skip(1).collect();
-    if args.len() == 1 {
-       let filename = String::from(&args[0]);
-       extract_usable_lines(filename).unwrap();
-    }
+    if args.len() < 1 { panic!("filename must be given!") }
+
+    // if args.len() == 1 {
+    //    let filename = String::from(&args[0]);
+    //    extract_usable_lines(filename).unwrap();
+    // }
+
+    let filename = &args[0];
 
     let mut perf_map: HashMap<String, PerfInfo> = HashMap::new();
     let mut found_pages = Vec::new();
     let mut slow_pages = Vec::new();
 
-    for result in BufReader::new(File::open("./ready.log")?).lines() {
+    for result in BufReader::new(File::open(filename)?).lines() {
         let row = result?;
 
         let path_regex = Regex::new(r"path=(\S+)").unwrap();
