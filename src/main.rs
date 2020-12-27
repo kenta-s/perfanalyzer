@@ -111,29 +111,29 @@ fn main() -> std::io::Result<()> {
 
         found_pages.push(perf_info.page.clone());
 
-        let merged_perf_info = match perf_map.get(&perf_info.page) {
-            None => perf_info.clone(),
-            Some(perf) => merge_perf_info(perf_info.clone(), perf)
-        };
-
-        perf_map.insert(perf_info.page, merged_perf_info);
+        if let Some(perf) = perf_map.get_mut(&perf_info.page) {
+            *perf = merge_perf_info(perf_info.clone(), perf);
+        } else {
+            perf_map.insert(perf_info.page.clone(), perf_info);
+        }
     }
 
+    found_pages.sort();
     found_pages.dedup();
 
     for page in found_pages {
-      match perf_map.get(&page) {
-        None => continue,
-        Some(perf) => {
-          let slow_page = SlowPage {
-              page: page,
-              average_duration: perf.duration,
-              count: perf.count
-          };
+        match perf_map.get(&page) {
+            None => continue,
+            Some(perf) => {
+                let slow_page = SlowPage {
+                    page: page,
+                    average_duration: perf.duration,
+                    count: perf.count
+                };
 
-          slow_pages.push(slow_page);
-        }
-      };
+                slow_pages.push(slow_page);
+            }
+        };
     };
 
     slow_pages.sort_by(|a, b| a.partial_cmp(b).unwrap());
