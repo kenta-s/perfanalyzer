@@ -8,6 +8,20 @@ use std::env;
 mod valid_line_extractor;
 use valid_line_extractor::extract_usable_lines;
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_extract_string_from_row() {
+        let row = "[xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx] method=GET path=/foo format=html controller=FooController action=index status=200 duration=605.59 view=372.50 db=52.93 host=www.example.com user=foo@example.com remote_ip=::1 request_host=localhost params={}";
+        let regex = regex::Regex::new(r"controller=(\S+)").unwrap();
+
+        let value = extract_string_from_row(row, regex);
+        assert_eq!("controller=FooController", value);
+    }
+}
+
 #[derive(Serialize, Deserialize)]
 #[derive(Clone)]
 struct PerfInfo {
