@@ -199,4 +199,18 @@ mod tests {
         let value = extract_string_from_row(row, regex);
         assert_eq!(Err("failed"), value);
     }
+
+    #[test]
+    fn extract_duration_from_row_should_return_duration_when_a_row_has_duration() {
+        let row = "method=GET path=/foo format=html controller=FooController action=index status=200 duration=1915.45 view=1841.20 db=7.93";
+        let value = extract_duration_from_row(row, Regex::new(r"duration=(\S+)").unwrap());
+        assert_eq!(Ok(1915.45), value);
+    }
+
+    #[test]
+    fn extract_duration_from_row_should_return_err_when_a_row_does_not_have_controller_name() {
+        let row = "path=/foo aaaaa bbbbb ccccc";
+        let value = extract_duration_from_row(row, Regex::new(r"duration=(\S+)").unwrap());
+        assert_eq!(Err("failed"), value);
+    }
 }
