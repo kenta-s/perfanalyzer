@@ -7,6 +7,8 @@ use std::cmp::Ordering;
 use std::env;
 mod valid_line_extractor;
 use valid_line_extractor::extract_usable_lines;
+mod text_extractor;
+use text_extractor::{extract_string_from_row, extract_duration_from_row};
 
 #[derive(Serialize, Deserialize)]
 #[derive(Clone)]
@@ -45,20 +47,6 @@ struct PageInformation {
     slow_pages: Vec<SlowPage>
 }
 
-fn extract_string_from_row(row: &str, regex: Regex) -> Result<String, &str> {
-    let texts = regex.captures(row);
-    let text = match texts {
-        None => return Err("failed"),
-        Some(value) => String::from(&value[0])
-    };
-
-    let split: Vec<&str> = text.split("=").collect();
-    return match split[1].parse::<String>() {
-        Err(_) => Err("failed"),
-        Ok(value) => Ok(value)
-    };
-}
-
 fn page_from_row(row: &str) -> String {
     let path_regex = Regex::new(r"path=(\S+)").unwrap();
     let method_regex = Regex::new(r"method=(\S+)").unwrap();
@@ -67,19 +55,6 @@ fn page_from_row(row: &str) -> String {
     let method = extract_string_from_row(row, method_regex).unwrap_or(String::new());
 
     return format!("{} {}", method, path);
-}
-
-fn extract_duration_from_row(row: &str, regex: Regex) -> Result<f32, &str> {
-    let captured = match regex.captures(row) {
-        None => return Err("failed"),
-        Some(value) => value
-    };
-
-    let split: Vec<&str> = captured[0].split("=").collect();
-    return match split[1].parse::<f32>() {
-        Err(_) => Err("failed"),
-        Ok(value) => Ok(value)
-    };
 }
 
 fn row_to_perf_info(row: &str) -> Result<PerfInfo, &str> {
@@ -176,41 +151,4 @@ fn main() -> std::io::Result<()> {
     println!("{}", serialized);
 
     Ok(())
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn extract_string_from_row_should_return_controller_name_when_a_row_has_controller_name() {
-        let row = "[xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx] method=GET path=/foo format=html controller=FooController action=index status=200";
-        let regex = regex::Regex::new(r"controller=(\S+)").unwrap();
-
-        let value = extract_string_from_row(row, regex);
-        assert_eq!(Ok(String::from("FooController")), value);
-    }
-
-    #[test]
-    fn extract_string_from_row_should_return_err_when_a_row_does_not_have_controller_name() {
-        let row = "path=/foo aaaaa bbbbb ccccc";
-        let regex = regex::Regex::new(r"controller=(\S+)").unwrap();
-
-        let value = extract_string_from_row(row, regex);
-        assert_eq!(Err("failed"), value);
-    }
-
-    #[test]
-    fn extract_duration_from_row_should_return_duration_when_a_row_has_duration() {
-        let row = "method=GET path=/foo format=html controller=FooController action=index status=200 duration=1915.45 view=1841.20 db=7.93";
-        let value = extract_duration_from_row(row, Regex::new(r"duration=(\S+)").unwrap());
-        assert_eq!(Ok(1915.45), value);
-    }
-
-    #[test]
-    fn extract_duration_from_row_should_return_err_when_a_row_does_not_have_controller_name() {
-        let row = "path=/foo aaaaa bbbbb ccccc";
-        let value = extract_duration_from_row(row, Regex::new(r"duration=(\S+)").unwrap());
-        assert_eq!(Err("failed"), value);
-    }
 }
