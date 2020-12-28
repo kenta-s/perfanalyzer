@@ -47,7 +47,7 @@ mod tests {
         let regex = regex::Regex::new(r"controller=(\S+)").unwrap();
 
         let value = extract_string_from_row(row, regex);
-        assert_eq!(Ok(String::from("FooController")), value);
+        assert_eq!(value, Ok(String::from("FooController")));
     }
 
     #[test]
@@ -56,41 +56,41 @@ mod tests {
         let regex = regex::Regex::new(r"controller=(\S+)").unwrap();
 
         let value = extract_string_from_row(row, regex);
-        assert_eq!(Err("failed"), value);
+        assert_eq!(value, Err("failed"));
     }
 
     #[test]
     fn extract_duration_from_row_should_return_duration_when_a_row_has_duration() {
         let row = "method=GET path=/foo format=html controller=FooController action=index status=200 duration=1915.45 view=1841.20 db=7.93";
         let value = extract_duration_from_row(row, Regex::new(r"duration=(\S+)").unwrap());
-        assert_eq!(Ok(1915.45), value);
+        assert_eq!(value, Ok(1915.45));
     }
 
     #[test]
     fn extract_duration_from_row_should_return_err_when_a_row_does_not_have_controller_name() {
         let row = "path=/foo aaaaa bbbbb ccccc";
         let value = extract_duration_from_row(row, Regex::new(r"duration=(\S+)").unwrap());
-        assert_eq!(Err("failed"), value);
+        assert_eq!(value, Err("failed"));
     }
 
     #[test]
     fn extract_duration_from_row_should_return_view_when_view_regex_is_given() {
         let row = "method=GET path=/foo format=html controller=FooController action=index status=200 duration=1915.45 view=1841.20 db=7.93";
         let value = extract_duration_from_row(row, Regex::new(r"view=(\S+)").unwrap());
-        assert_eq!(Ok(1841.20), value);
+        assert_eq!(value, Ok(1841.20));
     }
 
     #[test]
     fn extract_page_from_row_should_return_method_and_path() {
         let row = "[xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx] method=GET path=/foo format=html controller=FooController action=index status=200";
         let value = extract_page_from_row(row);
-        assert_eq!(Ok(String::from("GET /foo")), value);
+        assert_eq!(value, Ok(String::from("GET /foo")));
     }
 
     #[test]
     fn extract_page_from_row_should_return_empty_string_when_a_row_does_not_have_enough_information() {
         let row = "aaaaa bbbbb ccccc";
         let value = extract_page_from_row(row);
-        assert_eq!(Err("failed"), value);
+        assert_eq!(value, Err("failed"));
     }
 }

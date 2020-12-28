@@ -157,13 +157,13 @@ mod tests {
         let row = "method=GET path=/foo format=html controller=FooController action=index status=200 duration=1915.45 view=1841.20 db=7.93";
         let value = row_to_perf_info(&row).unwrap();
 
-        assert_eq!(String::from("GET /foo"), value.page);
-        assert_eq!(String::from("FooController"), value.controller);
-        assert_eq!(String::from("index"), value.action);
-        assert_eq!(1915.45, value.duration);
-        assert_eq!(1841.20, value.view);
-        assert_eq!(7.93, value.db);
-        assert_eq!(1, value.count);
+        assert_eq!(value.page, String::from("GET /foo"));
+        assert_eq!(value.controller, String::from("FooController"));
+        assert_eq!(value.action, String::from("index"));
+        assert_eq!(value.duration, 1915.45);
+        assert_eq!(value.view, 1841.20);
+        assert_eq!(value.db, 7.93);
+        assert_eq!(value.count, 1);
     }
 
     #[test]
@@ -172,7 +172,7 @@ mod tests {
         let row = "method=GET path=/foo format=html controller=FooController status=200 duration=1915.45 view=1841.20 db=7.93";
         let value = row_to_perf_info(&row);
 
-        assert_eq!(Err("failed"), value);
+        assert_eq!(value, Err("failed"));
     }
 
     #[test]
@@ -198,12 +198,12 @@ mod tests {
         };
 
         let value = merge_perf_info(perf_info1, &perf_info2);
-        assert_eq!(String::from("GET /foo"), value.page);
-        assert_eq!(String::from("FooController"), value.controller);
-        assert_eq!(String::from("index"), value.action);
-        assert_eq!(1500.0, value.duration);
-        assert_eq!(150.0, value.view);
-        assert_eq!(15.0, value.db);
-        assert_eq!(42, value.count);
+        assert_eq!(value.page, String::from("GET /foo"));
+        assert_eq!(value.controller, String::from("FooController"));
+        assert_eq!(value.action, String::from("index"));
+        assert_eq!(value.duration, 1500.0);
+        assert_eq!(value.view, 150.0);
+        assert_eq!(value.db, 15.0);
+        assert_eq!(value.count, 42);
     }
 }
