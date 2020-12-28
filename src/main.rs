@@ -84,22 +84,12 @@ fn merge_perf_info(perf_info1: PerfInfo, perf_info2: &PerfInfo) -> PerfInfo {
     };
 }
 
-fn main() -> std::io::Result<()> {
-    let args: Vec<String> = env::args().skip(1).collect();
-    if args.len() < 1 { panic!("filename must be given!") }
-
-    // if args.len() == 1 {
-    //    let filename = String::from(&args[0]);
-    //    extract_usable_lines(filename).unwrap();
-    // }
-
-    let filename = &args[0];
-
+fn build_page_information(lines: std::io::Lines<BufReader<File>>) -> Result<PageInformation, std::io::Error> {
     let mut perf_map: HashMap<String, PerfInfo> = HashMap::new();
     let mut found_pages = Vec::new();
     let mut slow_pages = Vec::new();
 
-    for result in BufReader::new(File::open(filename)?).lines() {
+    for result in lines {
         let row = result?;
         let perf_result = row_to_perf_info(&row);
 
@@ -142,10 +132,24 @@ fn main() -> std::io::Result<()> {
         slow_pages: slow_pages,
     };
 
-    let serialized = serde_json::to_string(&page_information).unwrap();
-    println!("{}", serialized);
+    Ok(page_information)
+}
 
-    Ok(())
+fn main() {
+    let args: Vec<String> = env::args().skip(1).collect();
+    if args.len() < 1 { panic!("filename must be given!") }
+
+    // if args.len() == 1 {
+    //    let filename = String::from(&args[0]);
+    //    extract_usable_lines(filename).unwrap();
+    // }
+
+    let filename = &args[0];
+
+    let lines = BufReader::new(File::open(filename).unwrap()).lines();
+    let page_information = build_page_information(lines).expect("Failed to build page information");
+    let serialized = serde_json::to_string(&page_information).expect("Failed to serialize page information");
+    println!("{}", serialized);
 }
 
 #[cfg(test)]
