@@ -185,4 +185,33 @@ mod tests {
         assert_eq!(value.db, 15.0);
         assert_eq!(value.count, 42);
     }
+
+    #[test]
+    fn build_page_information_returns_expected_vector_based_on_given_file() {
+        let lines = BufReader::new(File::open("tests/fixtures/dummy_log.txt").unwrap()).lines();
+
+        let expected = vec![
+            PerfInfo {
+                page: String::from("POST /foo/bar"),
+                controller: String::from("Foo::BarController"),
+                action: String::from("create"),
+                duration: 1148.54, view: 0.0, db: 535.79, count: 1
+            },
+            PerfInfo {
+                page: String::from("GET /other"),
+                controller: String::from("OtherController"),
+                action: String::from("index"),
+                duration: 817.76, view: 26.79, db: 92.33, count: 1
+            },
+            PerfInfo {
+                page: String::from("GET /foo"),
+                controller: String::from("FooController"),
+                action: String::from("index"),
+                duration: 605.59, view: 372.5, db: 52.93, count: 1
+            }
+        ];
+
+        let result = build_page_information(lines).unwrap();
+        assert_eq!(result, expected);
+    }
 }
