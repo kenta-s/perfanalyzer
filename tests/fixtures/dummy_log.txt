@@ -1,0 +1,10 @@
+This is an invalid line. This is an invalid line.
+This is an invalid line. This is an invalid line.
+[ce476184-177f-4e32-8376-38381db5a896] method=GET path=/foo format=html controller=FooController action=index status=200 duration=605.59 view=372.50 db=52.93 host=www.example.com user=foo@example.com remote_ip=::1 request_host=localhost params={}
+This is an invalid line. This is an invalid line.
+This is an invalid line. This is an invalid line.
+[8baf7cb0-142f-418b-b217-0d9de7a22b9f] method=POST path=/foo/bar format=html controller=Foo::BarController action=create status=302 duration=1148.54 view=0.00 db=535.79 location=http://www.example.com/foo host=www.example.com user=foo@example.com remote_ip=::1 request_host=localhost params={}
+This is an invalid line. This is an invalid line.
+[d0e8320a-6552-4f29-9b4d-37b810f34e8f] method=GET path=/other format=json controller=OtherController action=index status=200 duration=817.76 view=26.79 db=92.33 host=www.example.com user=foo@example.com remote_ip=::1 request_host=localhost params={}
+This is an invalid line. This is an invalid line.
+This is an invalid line. This is an invalid line.
