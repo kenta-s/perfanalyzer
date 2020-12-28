@@ -14,7 +14,7 @@ use text_extractor::{
     extract_page_from_row
 };
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 struct PerfInfo {
     page: String,
     controller: String,
@@ -25,29 +25,16 @@ struct PerfInfo {
     count: u32
 }
 
-#[derive(Serialize, Deserialize)]
-struct SlowPage {
-    page: String,
-    average_duration: f32,
-    count: u32
-}
-
-impl PartialEq for SlowPage {
+impl PartialEq for PerfInfo {
     fn eq(&self, other: &Self) -> bool {
-        self.average_duration == other.average_duration
+        self.duration == other.duration
     }
 }
 
-impl PartialOrd for SlowPage {
+impl PartialOrd for PerfInfo {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        other.average_duration.partial_cmp(&self.average_duration)
+        other.duration.partial_cmp(&self.duration)
     }
-}
-
-#[derive(Serialize, Deserialize)]
-struct PageInformation {
-    information: HashMap<String, PerfInfo>,
-    slow_pages: Vec<SlowPage>
 }
 
 fn row_to_perf_info(row: &str) -> Result<PerfInfo, &str> {
@@ -84,7 +71,7 @@ fn merge_perf_info(perf_info1: PerfInfo, perf_info2: &PerfInfo) -> PerfInfo {
     };
 }
 
-fn build_page_information(lines: std::io::Lines<BufReader<File>>) -> Result<PageInformation, std::io::Error> {
+fn build_page_information(lines: std::io::Lines<BufReader<File>>) -> Result<Vec<PerfInfo>, std::io::Error> {
     let mut perf_map: HashMap<String, PerfInfo> = HashMap::new();
     let mut found_pages = Vec::new();
     let mut slow_pages = Vec::new();
@@ -111,28 +98,16 @@ fn build_page_information(lines: std::io::Lines<BufReader<File>>) -> Result<Page
     found_pages.dedup();
 
     for page in found_pages {
-        match perf_map.get(&page) {
-            None => continue,
-            Some(perf) => {
-                let slow_page = SlowPage {
-                    page: page,
-                    average_duration: perf.duration,
-                    count: perf.count
-                };
-
-                slow_pages.push(slow_page);
-            }
-        };
+        if let Some(perf) = perf_map.remove(&page) {
+            slow_pages.push(perf);
+        } else {
+            continue;
+        }
     };
 
     slow_pages.sort_by(|a, b| a.partial_cmp(b).unwrap());
 
-    let page_information = PageInformation {
-        information: perf_map,
-        slow_pages: slow_pages,
-    };
-
-    Ok(page_information)
+    Ok(slow_pages)
 }
 
 fn main() {
